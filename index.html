@@ -1,0 +1,688 @@
+<html>
+<head>
+<title>Qingjie Zhao</title>
+<link href="javascript/css1.css" rel="stylesheet" type="text/css" />
+</head>
+<script>
+
+var gTimer = null;
+
+var gs = new Object();
+var fg = new Object();
+var bg = new Object();
+var n = 1;
+
+function canMove(mySprite, myLeft,myTop)
+{
+	var ret;
+	if(0 < myLeft && myLeft + mySprite.width < gs.viewWidth && 0 < myTop && myTop + mySprite.height < gs.viewHeight)
+	{
+		ret = true;
+	}
+	else 
+	{
+		ret = false;
+	}
+	return ret;
+}
+
+
+function checkCollision(e1,e2)
+{
+	e1x = parseInt(e1.style.left);
+	e1y = parseInt(e1.style.top);
+	e1w = e1.width;
+	e1h = e1.height;
+	
+	e2x = parseInt(e2.style.left);
+	e2y = parseInt(e2.style.top);
+	e2w = e2.width;
+	e2h = e2.height;
+	
+	var bool;
+	
+	if ((e1x<e2x +e2w && e2x < e1x+e1w)&&(e1y<e2y+e2h && e2y<e1y+e1h))
+	{
+		bool = true;
+	}
+	else
+	{
+		bool = false;
+	}
+	return bool;
+	
+}
+
+function clearGame()
+{	
+	
+	gs.valueAircraft = 3;
+	gs.valueTank = 3;
+	gs.valueTruck = 3;
+	
+	
+	gs.scrollSpeed = 10;
+	gs.bgscrollSpeed = 4;
+	gs.gameInterval = 200;
+	gs.viewWidth = 600;
+	gs.viewHeight = 400;
+	gs.spriteSpeed = 10;
+
+	gs.bulletNum = 1;
+	
+	gs.aircraftList = new Array();
+	gs.aircraftNum = 0;
+	gs.aircraftSpeed = 25;
+	gs.aircraftInterval = 25;
+	gs.aircraftStarting = gs.viewWidth;
+	gs.aircraftTopLimit = gs.viewHeight - 400;
+	gs.aircraftBottomLimit = gs.viewHeight - 200;
+	
+	gs.tankList = new Array();
+	gs.tankNum = 0;
+	gs.tankSpeed = 10;
+	gs.tankInterval = 30;
+	gs.tankStartingLeft = 0;
+	gs.tankTopLimit = gs.viewHeight - 60;
+	gs.tankBottomLimit = 0;
+	
+	gs.truckList = new Array();
+	gs.truckNum = 0;
+	gs.truckSpeed = 50;
+	gs.truckInterval = 30;
+	gs.truckStartingLeft = 0;
+	gs.truckTopLimit = gs.viewHeight - 60;
+	gs.truckBottomLimit = 0;
+	
+	gs.bossList = new Array();
+	gs.bossNum = 0;
+	gs.bossSpeed = 50;
+	gs.bossInterval = 100;
+	gs.bossStartingLeft = 0;
+	gs.bossTopLimit = gs.viewHeight - 60;
+	gs.bossBottomLimit = 0;
+	
+	
+	gs.hClipList = new Array();
+	gs.hClip1List = new Array();
+	gs.hClipNum = 0;
+	gs.hClipSpeed = 10;
+	gs.hClipInterval = 200;
+	gs.hClipStarting = -20;
+	gs.hClipLeftLimit = 0;
+	gs.hClipRightLimit = gs.viewWidth - 200;
+	
+	gs.bClipList = new Array();
+	gs.bClip1List = new Array();
+	gs.bClipNum = 0;
+	gs.bClipSpeed = 10;
+	gs.bClipInterval = 300;
+	gs.bClipStarting = - 20;
+	gs.bClipLeftLimit = 0;
+	gs.bClipRightLimit = gs.viewWidth - 200;
+	
+	gs.missileList = new Array();
+	gs.missileNum = 0;
+	gs.missileSpeed = 35;
+	
+	gs.bombList = new Array();
+	gs.bombNum = 0;
+	gs.bombSpeed = 15;
+	
+	gs.bltAircraftList = new Array();
+	gs.bltAircraftNum = 0;
+	gs.bltAircraftSpeed = 15;
+	
+	gs.bltTankList = new Array();
+	gs.bltTankNum = 0;
+	gs.bltTankSpeed = 15;
+	
+	
+	bg = document.getElementById("myBg");
+	bg.style.position = "absolute";
+	bg.style.top = 0;
+	bg.style.left = 0;
+	bg.style.zIndex = 0;
+	bg.style.clip = genRect(0, gs.viewWidth, gs.viewHeight, 0);
+	
+	fg = document.getElementById("myFg");
+	fg.style.position = "absolute";
+	fg.style.top = 320;
+	fg.style.left = 0;
+	fg.style.zIndex = 1;
+	fg.style.clip = genRect(0, gs.viewWidth, gs.viewHeight, 0);
+
+
+	
+	var mySprite = document.getElementById("sprite");
+	mySprite.style.position = "absolute";
+	mySprite.style.top = 160;
+	mySprite.style.left = 50;
+	mySprite.style.zIndex = 2;
+	gs.roverStatus = 0;
+	gs.roverExpNum = 6;
+	gs.roverInterval = 10;
+	gs.roverList = new Array();
+	gs.roverNum = 0;
+	gs.roverSpeed = 15;
+	
+	
+	var sb = document.getElementById("score_board");
+	sb.style.position = "absolute";
+	sb.style.top = 0;
+	sb.style.left = 0;
+	sb.style.zIndex = 3;
+	sb.style.fontFamily = "monospace";
+	sb.style.fontWeight = "bold";
+	sb.style.fontSize = 15;
+	sb.style.color = "#00FF00";
+	sb.width = 600;	
+	
+	updateRoverScoreBoard();
+	updateBulletsBoard(0);
+	
+	var t = document.getElementById("start");
+	if(t.value=="Pause")
+	{
+		t.setAttribute("value","Start");
+	}
+}
+
+function clearObstacles()
+{
+	startGame();
+	
+	clearAircraft();
+	clearTank();
+	clearTruck();
+	
+	clearhClip();
+	clearbClip();
+	
+	clearBltAircraft();
+	clearBltTank();
+	
+	clearBomb();
+	clearMissile();
+	
+	clearBoss();
+}
+
+
+function genRect(top,right,bottom,left)
+{
+	return "rect(" + top + "px," + right + "px," + bottom + "px," + left + "px)";
+}
+
+
+function initializeGame()
+{
+	gs.score = 0;
+	gs.TokenNum = 0;
+	gs.scrollNum = 0;
+	gs.lifeNum = 3;
+	clearGame();
+}
+
+
+function startGame()
+{
+	if(gTimer == null)
+	{
+		gTimer = setInterval(updateGame,gs.gameInterval);	
+	}
+	else
+	{
+		clearInterval(gTimer);
+		gTimer = null;
+	}
+}
+
+
+function updateGame()
+{
+
+	background();
+	foreground();		
+	if(gs.scrollNum % gs.aircraftInterval == 4 )
+	{
+		createAircraft(4);
+	}
+	
+	if(gs.scrollNum % gs.tankInterval == 7 )
+	{
+		createTank(7);
+	}
+
+	if(gs.scrollNum % gs.hClipInterval == 5 )
+	{
+		createhClip(5);
+	}
+	
+	if(gs.scrollNum % gs.bClipInterval == 8 )
+	{
+		createbClip(8);
+	}
+	if(gs.scrollNum % gs.truckInterval == 9 )
+	{
+		createTruck(10);
+	}
+	
+	if(gs.scrollNum > 1000 && gs.scrollNum % gs.bossInterval == 9)
+	{
+		createBoss(100);
+	}
+	
+	gs.scrollNum++;	
+	
+	updateObj("hClip");
+	updateObj("bClip");
+	
+	updateTank();
+	updateAircraft();
+	updateTruck();
+	
+	updateBomb();
+	updateMissile();
+	updateBoss();
+	
+	updateScoreBoard();
+	
+	if(gs.roverStatus >= gs.roverExpNum)
+	{
+		
+		 clearObstacles(); 
+	}
+	else
+	{
+		updateRover();
+	}
+	
+}
+
+
+function handleKeyPress(event)
+{
+	var sp = document.getElementById("sprite");
+	var xpos;
+	var ypos;
+	
+	
+	
+
+	switch(event.keyCode)
+	{	
+		case 37:
+			xpos = parseInt(sp.style.left) - gs.spriteSpeed*getSpiritSpeed();
+			ypos = parseInt(sp.style.top);
+			break;
+		case 39:
+			xpos = parseInt(sp.style.left) + gs.spriteSpeed*getSpiritSpeed();
+			ypos = parseInt(sp.style.top);
+			break;
+		case 38:
+			ypos = parseInt(sp.style.top) - gs.spriteSpeed*getSpiritSpeed();
+			xpos = parseInt(sp.style.left);
+			break;
+		case 40:
+			ypos = parseInt(sp.style.top) + gs.spriteSpeed*getSpiritSpeed();
+			xpos = parseInt(sp.style.left);
+			break;
+		case  0:
+			createMissile(6);
+			if(gs.bClip1List.length>0)
+			{
+				createBomb(9);
+			}
+			break;
+	}
+	
+	if(canMove(sp,xpos,ypos))
+	{	
+		sp.style.left = xpos;
+		sp.style.top = ypos;
+	}
+	
+	//document.getElementById("showxposition").innerHTML = xpos;
+	//document.getElementById("showyposition").innerHTML = ypos;
+
+}
+
+
+function updateObj(str)
+{
+	var mySprite = document.getElementById("sprite");
+	var tmpList = eval("gs." + str + "List");
+	var tmpSpeed = eval("gs." + str + "Speed");
+	var obj;
+	
+	for (var i = 0; i < tmpList.length; i++)
+	{
+		obj = eval("document.getElementById(\"" + str + tmpList[i].id + "\")");
+		
+		if ( obj != null)
+		{
+			obj.style.top = parseInt(obj.style.top) + tmpSpeed;
+			
+			if (parseInt(obj.style.top) + obj.height > gs.viewHeight)
+			{
+				document.body.removeChild(obj);
+			}
+			if(checkCollision(mySprite, obj))
+			{
+				if(str == "hClip")
+				{
+					
+					switch(gs.hClip1List.length)
+					{
+						case 0:
+							mySprite.src = "mySprite1.png";
+							updateBulletsBoard(1);
+							break;
+						case 1:
+							mySprite.src = "mySprite2.png";
+							updateBulletsBoard(2);
+							break;
+					}
+					
+					gs.hClip1List.push(str + tmpList[i].id);
+					mySprite.style.visibility = 'hidden';
+					mySprite.style.left = mySprite.style.left;
+					mySprite.style.top = mySprite.style.top;
+					mySprite.style.visibility = 'visible';
+				}
+				if(str == "bClip")
+				{
+					
+					gs.bClip1List.push(str + tmpList[i].id);
+							
+				}
+				
+				document.body.removeChild( obj);
+				if(gs.lifeNum < 3 && gs.lifeNum > 0)
+				{
+					gs.lifeNum++;
+					updateRoverScoreBoard();
+				}
+			}
+		}
+	}
+}
+
+function hit()
+{
+	var mySprite = document.getElementById('sprite');
+	
+	switch(gs.hClip1List.length)
+	{
+		case 0:
+			gs.roverStatus++;
+			updateRover();
+			break;
+		case 1:
+			mySprite.src = "mySprite.png";
+			updateBulletsBoard(0);
+			break;
+		case 2:
+			mySprite.src = "mySprite1.png";
+			updateBulletsBoard(1);
+			break;
+	}
+	
+	if(gs.hClip1List.length>0)
+	{
+		gs.hClip1List.pop();
+	}
+	updateRoverScoreBoard();
+	life();
+}
+
+function refreshopage()  
+{  
+    window.location.reload();  
+}   
+
+function life()
+{
+	if(gs.lifeNum == 1)
+	{
+		alert("You dead, You got "+gs.score+" Score");
+		refreshopage();
+	}
+	else
+	{
+		updateRover();
+	}
+}
+
+function updateRover()
+{
+	var mySprite = document.getElementById('sprite');
+	
+	if(gs.roverStatus > 0 && gs.roverStatus < gs.roverExpNum)
+	{
+		
+		mySprite.style.visibility = 'hidden';		
+		if(parseInt(mySprite.style.top) == 0|| parseInt(mySprite.style.top)<gs.aircraftBottomLimit)
+		{
+			mySprite.style.top = parseInt(mySprite.style.top) + mySprite.height/2;
+		}
+		else
+		{
+			mySprite.style.top = parseInt(mySprite.style.top) - mySprite.height;
+		}
+		mySprite.src = "sp/mySprite-" + gs.roverStatus + ".png";
+		
+		mySprite.style.visibility = 'visible';	
+		gs.roverStatus++;	
+		updateScoreBoard();
+	}
+
+	if(gs.roverStatus == gs.roverExpNum)
+	{
+			mySprite.src = "mySprite.png";
+			mySprite.style.visibility = 'visible';
+			startGame();
+			clearObstacles();
+			gs.lifeNum--;
+			clearGame();
+	}
+}
+
+
+
+
+function updateRoverScoreBoard()
+{
+	var roverSb = document.getElementById('life_sb');
+	var roverImageHTML = "";
+
+	for(var i=0;i<gs.lifeNum;i++)
+	{
+		roverImageHTML += '<img src="myApache0.png">';
+	}
+	roverSb.innerHTML = roverImageHTML;
+	
+}
+
+function updateBulletsBoard(num)
+{
+	var bulletSb = document.getElementById('bullet_sb');
+	var bulletImageHTML = "";
+	
+	for(var i=0;i<gs.bulletNum;i++)
+	{	
+		switch(num)
+		{
+			case 0:
+				bulletImageHTML += '<img src="myBullet0.png">';
+				break;
+			case 1:
+				bulletImageHTML += '<img src="myBullet1.png">';
+				break;
+			case 2:
+				bulletImageHTML += '<img src="myBullet2.png">';
+				break;
+			
+		}	
+	}
+	bulletSb.innerHTML = bulletImageHTML;
+	
+}
+
+
+
+function updateScoreBoard()
+{
+	var distanceSb = document.getElementById('distance_sb');
+	var score_sb = document.getElementById('score_sb');
+	//alert(gs.score);
+	score_sb.innerHTML = gs.score;
+	distanceSb.innerHTML = gs.scrollNum;
+	if(gs.score == 1500)
+	{
+		alert("You win~");
+		refreshopage();
+	}
+}
+
+
+
+function changeState()
+{
+	var t = document.getElementById("start");
+	
+	if(t.value=="Start")
+	{
+		t.setAttribute("value","Pause");
+	}
+	else
+	{
+		t.setAttribute("value","Start");
+	}
+	
+	startGame();
+}
+function getSpiritSpeed()
+{
+	
+	if(document._f1.group1[0].checked)
+	{
+		n = 1;
+	}
+	else if(document._f1.group1[1].checked)
+	{
+		n = 2;
+	}
+	document.getElementById('light').style.display='none';
+	document.getElementById('fade').style.display='none';
+	return n;
+}
+/*
+function setKey(up,down,left,right)
+{
+	alert(document._f1.group1[1].value);
+	//alert(up+"----"+down+"----"+left+"----"+right);	
+	//alert(document._f1.group1[0].value+"--option-- " + document._f1.group1[1].value + ".");	
+	//n = 2;
+
+	if(document._f1.checkSettingTruck.checked)
+	{
+		alert("It is checked");
+	}
+	else
+	{
+		alert("It is not checked");
+	}	
+}	
+*/
+</script>
+<script src="javascript/bfgGround.js"></script>
+<script src="javascript/boss.js"></script>
+<script src="javascript/truck.js"></script>
+<script src="javascript/tank.js"></script>
+<script src="javascript/aircraft.js"></script>
+<script src="javascript/hClip.js"></script>
+<script src="javascript/bClip.js"></script>
+<script src="javascript/missile.js"></script>
+<script src="javascript/bomb.js"></script>
+<script src="javascript/bltTank.js"></script>
+<script src="javascript/bltAircraft.js"></script>
+<body onkeyPress="handleKeyPress(event)" onLoad="initializeGame();">
+<img id="myBg" src="background.png"/>
+<img id="myFg"  src="foreground.png"/>
+<img id="sprite" src="mySprite.png" onclick=""/>
+<table>
+	<tr>
+		<td width="600">
+			<div id="score_board" style="width:600px;float:left;-moz-opacity:0.8;">
+					<div width="200" style="float:left;">Lives:</div>
+					<div width="120" id="life_sb" style="float:left"></div>
+					<div width="100" id="distance_sb" style="float:right"></div>
+					<div width="100" style="float:right;">Distance:</div>		
+					<div width="200" style="float:left;">Missile:</div>
+					<div width="120" id="bullet_sb" style="float:left"></div>		
+					<div width="200" style="float:left;">Score:</div>
+					<div width="120" id="score_sb" style="float:left"></div>
+			</div>
+		</td>
+		<td align="left">
+				<form name="_f1">
+						<div>
+						<input type="button" id ="start" value="Start" onclick = "changeState()"/>
+						<input type="button" value="Setting"  onclick = "document.getElementById('light').style.display='block';document.getElementById('fade').style.display='block'">
+						<div>
+						<div id="light" class="white_content" align="left">							
+							<fieldset><legend>Sprite</legend>
+									<table>										
+										<tr>
+											<td align="right">Speed*1:</td>
+											<td><input type="radio" name="group1" value="1" checked></input></td>
+											<td align="right">Speed*2:</td>
+											<td><input type="radio" name="group1" value="2"></input></td>
+										</tr>
+									</table>
+							</fieldset>
+							<fieldset><legend>Enemy:</legend>
+								<table>
+									<tr>
+										<td align="right">Aircraft:</td>
+										<td><input type="checkbox" name="checkSettingAircraft" disabled="true" checked></input></td>
+										<td align="right">Tank:</td>
+										<td><input type="checkbox" name="checkSettingTank" disabled="true" checked></input></td>
+										<td align="right">Truck:</td>
+										<td><input type="checkbox" name="checkSettingTruck" disabled="true" checked></input></td>
+									</tr>
+									
+								</table>
+							</fieldset>		
+							<input type="button" value="Close" onclick = "document.getElementById('light').style.display='none';document.getElementById('fade').style.display='none'"/>
+							<input type="button" value="Submit" onclick = "getSpiritSpeed()"/>			
+						</div>
+						<div id="fade" class="black_overlay"></div>	
+						<h5>Instructions:<h5>
+<font color="red">1.</font> Start the game by clicking the Start button; Pause the game by clicking the Pause button.
+<br /><font color="red">2.</font> Use the arrow keys on your keyboard move the spirit left, right, up, and down; Shoot missiles and bomb by 0.
+<br /><font color="red">3.</font> The spirit enlarge and life increase 1 when it grabs a parachute that is named H1;
+ The spirit is not change if the spirit is the big, and the lives is 3;
+The spirit will be shoot bomb when you grab a parachute that is named B1.
+<br /><font color="red">4.</font> The small state of spirit be exploded when it is hit from bullet of tank or aircraft of enemy.
+The middle state of spirit be changed to small state of spirit when it is hit from bullet of tank or aircraft of enemy.
+The big state of spirit be changed to middle state of spirit when it is hit from bullet of tank or aircraft of enemy.
+The spirit be exploded when it is collided by the aircraft, tank, car.
+The spirit be exploded when it is collided by the boss, and the score reset 0.
+
+<br /><font color="red">5.</font>The small missile hit one enemy, the score will be increase 10;
+The middle missile hit one enemy, the score will be increase 20;
+The big missile hit one enemy, the score will be increase 30;
+The bomb hit one enemy, the score will be increase 10.
+
+<br /><font color="red">6.</font> User can set the speed of spirit, for example, 1*Speed,2*Speed.
+<br /><font color="red">7.</font> If you lose all three lives, you lose the game.<br />
+						
+				</form>						
+		</td>
+	</tr>
+</table>						
+</body>
+</html>
